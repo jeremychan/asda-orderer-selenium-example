@@ -1,5 +1,6 @@
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -27,25 +28,28 @@ public class AsdaOrderer {
   public void createOrder(List<String> items) {
     loadPage();
 
-    items.forEach(item -> {
-      searchItem(item);
-      addFirstResultToShoppingCart(item);
-    });
+    double total = items.stream()
+      .map(item -> {
+        searchItem(item);
+        return getPriceOfFirstResult();
+      }).mapToDouble(Double::doubleValue).sum();
+
+    System.out.println(String.format("Total: %.2f", total));
   }
 
-  private void addFirstResultToShoppingCart(String item) {
-    var addButtonLocator = By.className("co-quantity__add-btn");
+  private double getPriceOfFirstResult() {
+    By priceTagLocator = By.className("co-product__price");
     new WebDriverWait(driver, 10).until(
-      ExpectedConditions.elementToBeClickable(addButtonLocator)
+      ExpectedConditions.numberOfElementsToBeMoreThan(priceTagLocator, 1)
     );
-    var addButtons = driver.findElements(addButtonLocator);
-    addButtons.get(0).click();
+    List<WebElement> priceTags = driver.findElements(priceTagLocator);
+    return Double.parseDouble(priceTags.get(0).getText().replace("£", ""));
   }
 
   private void searchItem(String item) {
-    var inputField = driver.findElement(By.xpath("//*[@id=\"search\"]"));
+    WebElement inputField = driver.findElement(By.xpath("//*[@id=\"search\"]"));
     inputField.sendKeys(item);
-    var searchButton = driver.findElement(
+    WebElement searchButton = driver.findElement(
       By.xpath("//*[@id=\"root\"]/div[2]/header/div/div/div/div[3]/div/form/button")
     );
     searchButton.click();

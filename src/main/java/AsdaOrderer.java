@@ -3,10 +3,9 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class AsdaOrderer {
 
@@ -23,6 +22,7 @@ public class AsdaOrderer {
       "profile-directory=Profile 1"
     );
     driver = new ChromeDriver(options);
+    driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
   }
 
   public void createOrder(List<String> items) {
@@ -35,33 +35,27 @@ public class AsdaOrderer {
       }).mapToDouble(Double::doubleValue).sum();
 
     System.out.println(String.format("Total: %.2f", total));
+    driver.close();
   }
 
   private double getPriceOfFirstResult() {
     By priceTagLocator = By.className("co-product__price");
-    new WebDriverWait(driver, 10).until(
-      ExpectedConditions.numberOfElementsToBeMoreThan(priceTagLocator, 1)
-    );
     List<WebElement> priceTags = driver.findElements(priceTagLocator);
-    return Double.parseDouble(priceTags.get(0).getText().replace("£", ""));
+    return Double.parseDouble(
+      priceTags.get(0).getText().replace("£", "")
+    );
   }
 
   private void searchItem(String item) {
-    WebElement inputField = driver.findElement(By.xpath("//*[@id=\"search\"]"));
+    WebElement inputField = driver.findElement(By.id("search"));
     inputField.sendKeys(item);
     WebElement searchButton = driver.findElement(
-      By.xpath("//*[@id=\"root\"]/div[2]/header/div/div/div/div[3]/div/form/button")
+      By.className("search-form__search-button")
     );
     searchButton.click();
   }
 
   private void loadPage() {
     driver.get("https://groceries.asda.com/");
-
-    new WebDriverWait(driver, 10).until(
-      ExpectedConditions.visibilityOfElementLocated(
-        By.xpath("//*[@id=\"search\"]")
-      )
-    );
   }
 }
